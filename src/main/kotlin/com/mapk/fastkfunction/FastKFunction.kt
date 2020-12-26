@@ -13,6 +13,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaConstructor
 import kotlin.reflect.jvm.javaMethod
+import kotlin.reflect.jvm.kotlinFunction
 import java.lang.reflect.Constructor as JavaConstructor
 
 sealed class FastKFunction<T> {
@@ -221,6 +222,18 @@ sealed class FastKFunction<T> {
                     instanceFunctionOf(function, instance, parameters, method)
                 }
             }
+        }
+
+        fun <T : Any> of(constructor: JavaConstructor<T>): FastKFunction<T> {
+            val function: KFunction<T> = constructor.kotlinFunction
+                ?: throw IllegalArgumentException("This constructor is not Kotlin function.")
+
+            // 引数を要求しないか、複数のインスタンスを求める場合エラーとする
+            val parameters: List<KParameter> = function.parameters.checkParameters()
+            // この関数には確実にアクセスするためアクセシビリティ書き換え
+            function.isAccessible = true
+
+            return Constructor(function, constructor, parameters)
         }
     }
 }
