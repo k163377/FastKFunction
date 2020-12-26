@@ -235,5 +235,23 @@ sealed class FastKFunction<T> {
 
             return Constructor(function, constructor, parameters)
         }
+
+        fun <T> of(method: Method, instance: Any? = null): FastKFunction<T> {
+            @Suppress("UNCHECKED_CAST")
+            val function: KFunction<T> = method.kotlinFunction as KFunction<T>?
+                ?: throw IllegalArgumentException("This constructor is not Kotlin function.")
+
+            // 引数を要求しないか、複数のインスタンスを求める場合エラーとする
+            val parameters: List<KParameter> = function.parameters.checkParameters()
+            // この関数には確実にアクセスするためアクセシビリティ書き換え
+            function.isAccessible = true
+
+            // Methodがstatic関数ならfunctionはトップレベル関数
+            return if (Modifier.isStatic(method.modifiers)) {
+                topLevelFunctionOf(function, instance, parameters, method)
+            } else {
+                instanceFunctionOf(function, instance, parameters, method)
+            }
+        }
     }
 }
