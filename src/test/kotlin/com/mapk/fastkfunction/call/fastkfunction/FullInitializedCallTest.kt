@@ -36,9 +36,15 @@ private fun FullInitializedCallTest.Class.topLevelExtensionFunc(arg1: Int, arg2:
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 private class FullInitializedCallTest {
+    interface ToResult {
+        fun toResult(): Pair<Int, String>
+    }
+
     class Class
 
-    data class Dst(val arg1: Int, val arg2: String) {
+    data class Dst(val arg1: Int, val arg2: String) : ToResult {
+        override fun toResult(): Pair<Int, String> = arg1 to arg2
+
         companion object {
             fun of(arg1: Int, arg2: String) = Dst(arg1, arg2)
         }
@@ -48,7 +54,7 @@ private class FullInitializedCallTest {
 
     @ParameterizedTest
     @MethodSource("argumentsProvider")
-    fun callByArgumentBucket(target: KFunction<Dst>, instance: Any?, message: String) {
+    fun callByArgumentBucket(target: KFunction<ToResult>, instance: Any?, message: String) {
         val sut = FastKFunction.of(target, instance)
         val bucket = sut.generateBucket().apply {
             val params = target.parameters.filter { it.kind == KParameter.Kind.VALUE }
@@ -58,25 +64,25 @@ private class FullInitializedCallTest {
         }
 
         assertDoesNotThrow("Fail $message") {
-            assertEquals(Dst(100, "txt"), sut.callBy(bucket), message)
+            assertEquals(100 to "txt", sut.callBy(bucket).toResult(), message)
         }
     }
 
     @ParameterizedTest
     @MethodSource("argumentsProvider")
-    fun callByCollection(target: KFunction<Dst>, instance: Any?, message: String) {
+    fun callByCollection(target: KFunction<ToResult>, instance: Any?, message: String) {
         val sut = FastKFunction.of(target, instance)
         assertDoesNotThrow("Fail $message") {
-            assertEquals(Dst(100, "txt"), sut.callByCollection(listOf(100, "txt")), message)
+            assertEquals(100 to "txt", sut.callByCollection(listOf(100, "txt")).toResult(), message)
         }
     }
 
     @ParameterizedTest
     @MethodSource("argumentsProvider")
-    fun callByVarargs(target: KFunction<Dst>, instance: Any?, message: String) {
+    fun callByVarargs(target: KFunction<ToResult>, instance: Any?, message: String) {
         val sut = FastKFunction.of(target, instance)
         assertDoesNotThrow("Fail $message") {
-            assertEquals(Dst(100, "txt"), sut.call(100, "txt"), message)
+            assertEquals(100 to "txt", sut.call(100, "txt").toResult(), message)
         }
     }
 
