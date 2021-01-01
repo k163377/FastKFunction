@@ -172,7 +172,8 @@ sealed class FastKFunction<T> {
             return when {
                 parameters[0].kind == KParameter.Kind.INSTANCE -> {
                     instance.instanceOrThrow(KParameter.Kind.INSTANCE).let { nonNullInstance ->
-                        checkInstanceClass(parameters[0].clazz, nonNullInstance::class)
+                        // チェックが壊れて？いてINSTANCE Parameterが要求するクラスがおかしいため、一旦チェックはスキップ
+                        // checkInstanceClass(parameters[0].clazz, nonNullInstance::class)
 
                         val generator = BucketGenerator(parameters, instance)
                         val valueParameters = parameters.subList(1, parameters.size)
