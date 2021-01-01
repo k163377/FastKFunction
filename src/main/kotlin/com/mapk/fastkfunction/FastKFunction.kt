@@ -161,6 +161,37 @@ sealed class FastKFunction<T> {
                 throw IllegalArgumentException("This function is require multiple instances.")
         }
 
+        private fun <T> constructorOf(
+            function: KFunction<T>,
+            inputtedInstance: Any?,
+            parameters: List<KParameter>,
+            constructor: JavaConstructor<T>
+        ): FastKFunction<T> {
+            val instance = inputtedInstance ?: constructor.parentObject
+
+            return when {
+                parameters[0].kind == KParameter.Kind.INSTANCE -> {
+                    instance.instanceOrThrow(KParameter.Kind.INSTANCE).let { nonNullInstance ->
+                        checkInstanceClass(parameters[0].clazz, nonNullInstance::class)
+
+                        val generator = BucketGenerator(parameters, instance)
+                        val valueParameters = parameters.subList(1, parameters.size)
+
+                        InnerConstructor(function, constructor, nonNullInstance, generator, valueParameters)
+                    }
+                }
+                parameters.size != constructor.parameterCount -> instance
+                    ?.let {
+                        // コンストラクタから親オブジェクトを取得する場合、declaringClassを2回呼ぶ
+                        checkInstanceClass(constructor.declaringClass.declaringClass.kotlin, it::class)
+
+                        InnerConstructor(function, constructor, it, BucketGenerator(parameters, null), parameters)
+                    }
+                    ?: Function(function, parameters)
+                else -> Constructor(function, constructor, parameters)
+            }
+        }
+
         @TestOnly
         internal fun <T> topLevelFunctionOf(
             function: KFunction<T>,
@@ -232,7 +263,7 @@ sealed class FastKFunction<T> {
             val constructor = function.javaConstructor
 
             return if (constructor != null) {
-                Constructor(function, constructor, parameters)
+                constructorOf(function, instance, parameters, constructor)
             } else {
                 val method = function.javaMethod!!
 
