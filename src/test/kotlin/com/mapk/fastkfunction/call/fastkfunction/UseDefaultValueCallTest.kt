@@ -67,9 +67,15 @@ private fun UseDefaultValueCallTest.Class.topLevelExtensionFuncFromInstanceWithI
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 private class UseDefaultValueCallTest {
+    interface ToResult {
+        fun toResult(): Triple<Int, String, String>
+    }
+
     class Class
 
-    data class Dst(val arg1: Int, val arg2: String, val arg3: String = DefaultValues.Constructor.name) {
+    data class Dst(val arg1: Int, val arg2: String, val arg3: String = DefaultValues.Constructor.name) : ToResult {
+        override fun toResult() = Triple(arg1, arg2, arg3)
+
         companion object {
             fun of(arg1: Int, arg2: String, arg3: String = DefaultValues.CompanionObjectFunc.name) =
                 Dst(arg1, arg2, arg3)
@@ -105,7 +111,7 @@ private class UseDefaultValueCallTest {
 
     @ParameterizedTest
     @MethodSource("argumentsProvider")
-    fun test(target: KFunction<Dst>, instance: Any?, default: DefaultValues) {
+    fun test(target: KFunction<ToResult>, instance: Any?, default: DefaultValues) {
         val sut = FastKFunction.of(target, instance)
         val bucket = sut.generateBucket().apply {
             val params = sut.valueParameters
@@ -115,7 +121,7 @@ private class UseDefaultValueCallTest {
         }
 
         assertDoesNotThrow("Fail ${default.name}") {
-            assertEquals(Dst(100, "txt", default.name), sut.callBy(bucket), default.name)
+            assertEquals(Triple(100, "txt", default.name), sut.callBy(bucket).toResult(), default.name)
         }
     }
 
