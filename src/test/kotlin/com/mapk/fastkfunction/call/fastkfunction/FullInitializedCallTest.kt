@@ -13,6 +13,7 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.functions
+import kotlin.reflect.full.primaryConstructor
 
 private fun topLevelFunc(arg1: Int, arg2: String): FullInitializedCallTest.Dst =
     FullInitializedCallTest.Dst(arg1, arg2)
@@ -23,6 +24,9 @@ private fun FullInitializedCallTest.Class.topLevelExtensionFunc(arg1: Int, arg2:
 /**
  * 網羅しているパターン
  * - コンストラクタ
+ * - インナークラスのコンストラクタ
+ * - インナークラスのコンストラクタ + インスタンス
+ * - リフレクションで取得したインナークラスのコンストラクタ + インスタンス
  * - インスタンスメソッド
  * - インスタンスメソッド + インスタンス
  * - コンパニオンオブジェクトに定義したメソッド
@@ -48,6 +52,10 @@ private class FullInitializedCallTest {
         companion object {
             fun of(arg1: Int, arg2: String) = Dst(arg1, arg2)
         }
+    }
+
+    inner class InnerDst(val arg1: Int, val arg2: String) : ToResult {
+        override fun toResult(): Pair<Int, String> = arg1 to arg2
     }
 
     private fun instanceFunction(arg1: Int, arg2: String) = Dst(arg1, arg2)
@@ -87,10 +95,14 @@ private class FullInitializedCallTest {
     }
 
     fun argumentsProvider(): Stream<Arguments> {
+        val innerDstRawFunc = InnerDst::class.primaryConstructor!!
         val companionRawFunc = Dst::class.companionObject!!.functions.first { it.name == "of" }
 
         return listOf(
             Arguments.of(FullInitializedCallTest::Dst, null, "constructor"),
+            Arguments.of(::InnerDst, null, "inner constructor"),
+            Arguments.of(::InnerDst, this, "inner constructor with instance"),
+            Arguments.of(innerDstRawFunc, this, "inner constructor from reflection with instance"),
             Arguments.of(::instanceFunction, null, "instance func"),
             Arguments.of(::instanceFunction, this, "instance func with instance"),
             Arguments.of((Dst)::of, null, "companion object func"),
