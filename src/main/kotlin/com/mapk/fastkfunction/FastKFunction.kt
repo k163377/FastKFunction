@@ -3,6 +3,7 @@ package com.mapk.fastkfunction
 import com.mapk.fastkfunction.argumentbucket.ArgumentBucket
 import com.mapk.fastkfunction.argumentbucket.BucketGenerator
 import com.mapk.fastkfunction.spreadwrapper.ForConstructor
+import com.mapk.fastkfunction.spreadwrapper.ForInnerConstructor
 import com.mapk.fastkfunction.spreadwrapper.ForKFunction
 import com.mapk.fastkfunction.spreadwrapper.ForMethod
 import org.jetbrains.annotations.TestOnly
@@ -31,6 +32,27 @@ sealed class FastKFunction<T> {
     ) : FastKFunction<T>() {
         private val spreadWrapper = ForConstructor(constructor)
         override val bucketGenerator = BucketGenerator(valueParameters, null)
+
+        override fun callBy(bucket: ArgumentBucket): T = if (bucket.isFullInitialized()) {
+            spreadWrapper.call(bucket.getValueArray())
+        } else {
+            function.callBy(bucket)
+        }
+
+        override fun callByCollection(args: Collection<Any?>): T = spreadWrapper.call(args.toTypedArray())
+
+        override fun call(vararg args: Any?): T = spreadWrapper.call(args)
+    }
+
+    internal class InnerConstructor<T>(
+        private val function: KFunction<T>,
+        constructor: JavaConstructor<T>,
+        instance: Any,
+        override val bucketGenerator: BucketGenerator,
+        override val valueParameters: List<KParameter>
+    ) : FastKFunction<T>() {
+        // コンストラクタのパラメータサイズは必ずvalueParameters.size + 1
+        private val spreadWrapper = ForInnerConstructor(constructor, instance, valueParameters.size + 1)
 
         override fun callBy(bucket: ArgumentBucket): T = if (bucket.isFullInitialized()) {
             spreadWrapper.call(bucket.getValueArray())
