@@ -1,9 +1,19 @@
 package com.mapk.fastkfunction
 
+import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.isSuperclassOf
+
+/**
+ * Get object instance if receiver declared in object.
+ *
+ * @receiver JavaConstructor.
+ * @return Method.declaringClass.kotlin.objectInstance
+ */
+// コンストラクタから親オブジェクトを取得する場合、declaringClassを2回呼ぶ。トップレベルだと取得結果がnullになる。
+internal val Constructor<*>.parentObject: Any? get() = declaringClass.declaringClass?.kotlin?.objectInstance
 
 /**
  * Get object instance if receiver declared in object.
