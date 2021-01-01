@@ -180,14 +180,21 @@ sealed class FastKFunction<T> {
                         InnerConstructor(function, constructor, nonNullInstance, generator, valueParameters)
                     }
                 }
-                parameters.size != constructor.parameterCount -> instance
-                    ?.let {
-                        // コンストラクタから親オブジェクトを取得する場合、declaringClassを2回呼ぶ
-                        checkInstanceClass(constructor.declaringClass.declaringClass.kotlin, it::class)
+                parameters.size != constructor.parameterCount ->
+                    instance
+                        ?.let {
+                            // コンストラクタから親オブジェクトを取得する場合、declaringClassを2回呼ぶ
+                            checkInstanceClass(constructor.declaringClass.declaringClass.kotlin, it::class)
 
-                        InnerConstructor(function, constructor, it, BucketGenerator(parameters, null), parameters)
-                    }
-                    ?: Function(function, parameters)
+                            InnerConstructor(
+                                function,
+                                constructor,
+                                it,
+                                BucketGenerator(parameters, null),
+                                parameters
+                            )
+                        }
+                        ?: Function(function, parameters)
                 else -> Constructor(function, constructor, parameters)
             }
         }
