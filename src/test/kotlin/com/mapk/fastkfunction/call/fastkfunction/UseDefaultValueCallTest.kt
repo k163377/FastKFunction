@@ -12,9 +12,11 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.functions
+import kotlin.reflect.full.primaryConstructor
 
 enum class DefaultValues {
     Constructor,
+    InnerConstructor,
     InstanceFunc,
     InstanceFuncWithInstance,
     CompanionObjectFunc,
@@ -54,6 +56,9 @@ private fun UseDefaultValueCallTest.Class.topLevelExtensionFuncFromInstanceWithI
 /**
  * 網羅しているパターン
  * - コンストラクタ
+ * - インナークラスのコンストラクタ
+ * - インナークラスのコンストラクタ + インスタンス
+ * - リフレクションで取得したインナークラスのコンストラクタ + インスタンス
  * - インスタンスメソッド
  * - インスタンスメソッド + インスタンス
  * - コンパニオンオブジェクトに定義したメソッド
@@ -100,6 +105,14 @@ private class UseDefaultValueCallTest {
         }
     }
 
+    inner class InnerDst(
+        val arg1: Int,
+        val arg2: String,
+        val arg3: String = DefaultValues.InnerConstructor.name
+    ) : ToResult {
+        override fun toResult() = Triple(arg1, arg2, arg3)
+    }
+
     private fun instanceFunction(arg1: Int, arg2: String, arg3: String = DefaultValues.InstanceFunc.name) =
         Dst(arg1, arg2, arg3)
 
@@ -125,13 +138,34 @@ private class UseDefaultValueCallTest {
         }
     }
 
+    init {
+        val hoge = ::InnerDst
+        val fuga = FastKFunction.of(hoge)
+        val piyo = fuga.generateBucket()
+        val temp = hoge.parameters
+
+        val result1 = hoge.parameters.subList(0, 2)
+            .associateWith { if (it.index == 0) 100 else "txt" }
+            .let { hoge.callBy(it) }
+        val result2 = piyo.apply {
+            this[0] = 100
+            this[1] = "txt"
+        }.let { fuga.callBy(it) }
+
+        println()
+    }
+
     fun argumentsProvider(): Stream<Arguments> {
+        val innerDstRawFunc = InnerDst::class.primaryConstructor!!
         val ofFromReflection = Dst::class.companionObject!!.functions.first { it.name == "ofFromReflection" }
         val ofFromReflectionWithInstance =
             Dst::class.companionObject!!.functions.first { it.name == "ofFromReflectionWithInstance" }
 
         return listOf(
             Arguments.of(UseDefaultValueCallTest::Dst, null, DefaultValues.Constructor),
+            Arguments.of(::InnerDst, null, DefaultValues.InnerConstructor),
+            Arguments.of(::InnerDst, this, DefaultValues.InnerConstructor),
+            Arguments.of(innerDstRawFunc, this, DefaultValues.InnerConstructor),
             Arguments.of(::instanceFunction, null, DefaultValues.InstanceFunc),
             Arguments.of(::instanceFunctionWithInstance, this, DefaultValues.InstanceFuncWithInstance),
             Arguments.of((Dst)::of, null, DefaultValues.CompanionObjectFunc),
