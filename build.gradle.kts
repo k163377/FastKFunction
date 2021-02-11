@@ -1,12 +1,12 @@
 plugins {
-    kotlin("jvm") version "1.4.30" apply false
+    kotlin("jvm") version Versions.kotlinVersion apply false
 }
 
 buildscript {
     dependencies {
-        classpath(kotlin("gradle-plugin", version = "1.4.30"))
+        classpath(kotlin("gradle-plugin", version = Versions.kotlinVersion))
     }
 }
 
 group = "com.mapk"
-version = "0.1.3"
+version = Versions.projectVersion
