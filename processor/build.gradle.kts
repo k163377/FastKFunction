@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     // local
-    implementation(project(":commons"))
+    implementation(project(":core"))
 
     // codegen
     // Kotlinpoet

@@ -1,4 +1,4 @@
 rootProject.name = "FastKFunction"
-include("commons")
+include("core")
 include("processor")
 include("test")
