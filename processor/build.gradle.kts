@@ -17,6 +17,8 @@ dependencies {
     // codegen
     // Kotlinpoet
     implementation("com.squareup:kotlinpoet:${Versions.kotlinpoetVersion}")
+    implementation("com.squareup:kotlinpoet-metadata-specs:${Versions.kotlinpoetVersion}")
+    implementation("com.squareup:kotlinpoet-classinspector-elements:${Versions.kotlinpoetVersion}")
     // AutoService
     runtimeOnly("com.google.auto:auto-common:${Versions.autoCommonVersion}")
     implementation("com.google.auto.service:auto-service:${Versions.autoServiceVersion}")
